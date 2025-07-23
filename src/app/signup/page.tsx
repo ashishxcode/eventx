@@ -1,7 +1,7 @@
 import { SignupForm } from "@/components/auth/signup-form";
 import React from "react";
 
-const LoginPage = () => {
+const SignupPage = () => {
   return (
     <div className="flex items-center w-full justify-center min-h-screen bg-gray-100 p-4">
       <SignupForm />
@@ -9,4 +9,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;
+export default SignupPage;

@@ -1,5 +1,6 @@
 "use client";
-
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,36 +12,43 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuth } from "@/context/AuthContext";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { SignupInputs, SignupSchema } from "@/types/auth";
+import { createClient } from "@/utils/supabase/client";
+import { SignupSchema, type SignupInputs } from "@/types/auth";
 import Link from "next/link";
 
-export function SignupForm({
+export const SignupForm = ({
   className,
   ...props
-}: React.ComponentProps<"div">) {
-  const { signup } = useAuth();
-  const [error, setError] = useState("");
+}: React.ComponentProps<"div">) => {
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const supabase = createClient();
 
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<SignupInputs>({
     resolver: zodResolver(SignupSchema),
   });
 
-  const onSubmit = (data: SignupInputs) => {
-    setError("");
-
-    const signupSuccess = signup(data.name, data.email, data.password);
-
-    if (!signupSuccess) {
-      setError("Signup failed. Email might already exist.");
+  const onSubmit = async (data: SignupInputs) => {
+    setError(null);
+    const { error } = await supabase.auth.signUp({
+      email: data.email,
+      password: data.password,
+      options: {
+        emailRedirectTo: `${location.origin}/auth/confirm`,
+        data: { display_name: data.name }, // Save as display_name
+      },
+    });
+    if (error) {
+      setError(error.message);
+      return;
     }
+    router.push("/check-email");
   };
 
   return (
@@ -56,21 +64,18 @@ export function SignupForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
-              {error}
-            </div>
-          )}
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="flex flex-col gap-6">
+              {error && <p className="text-red-500 text-sm">{error}</p>}
               <div className="grid gap-3">
                 <Label htmlFor="name">Name</Label>
                 <Input
                   id="name"
                   type="text"
-                  placeholder="John Doe"
+                  placeholder="Your name"
                   {...register("name")}
                   className={errors.name ? "border-red-500" : ""}
+                  disabled={isSubmitting}
                 />
                 {errors.name && (
                   <p className="text-red-500 text-xs mt-1">
@@ -86,6 +91,7 @@ export function SignupForm({
                   placeholder="m@example.com"
                   {...register("email")}
                   className={errors.email ? "border-red-500" : ""}
+                  disabled={isSubmitting}
                 />
                 {errors.email && (
                   <p className="text-red-500 text-xs mt-1">
@@ -101,6 +107,7 @@ export function SignupForm({
                   placeholder="Enter your password"
                   {...register("password")}
                   className={errors.password ? "border-red-500" : ""}
+                  disabled={isSubmitting}
                 />
                 {errors.password && (
                   <p className="text-red-500 text-xs mt-1">
@@ -116,6 +123,7 @@ export function SignupForm({
                   placeholder="Confirm your password"
                   {...register("confirmPassword")}
                   className={errors.confirmPassword ? "border-red-500" : ""}
+                  disabled={isSubmitting}
                 />
                 {errors.confirmPassword && (
                   <p className="text-red-500 text-xs mt-1">
@@ -124,8 +132,12 @@ export function SignupForm({
                 )}
               </div>
               <div className="flex flex-col gap-3">
-                <Button type="submit" className="w-full">
-                  Sign Up
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Signing up..." : "Sign Up"}
                 </Button>
               </div>
             </div>
@@ -140,4 +152,4 @@ export function SignupForm({
       </Card>
     </div>
   );
-}
+};

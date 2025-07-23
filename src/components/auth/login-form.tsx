@@ -1,5 +1,6 @@
 "use client";
-
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,37 +12,39 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuth } from "@/context/AuthContext";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { LoginInputs } from "@/types/auth";
-import { LoginSchema } from "@/types/auth";
+import { createClient } from "@/utils/supabase/client";
+import { LoginSchema, type LoginInputs } from "@/types/auth";
 import Link from "next/link";
 
-export function LoginForm({
+export const LoginForm = ({
   className,
   ...props
-}: React.ComponentProps<"div">) {
-  const { login } = useAuth();
-  const [error, setError] = useState("");
+}: React.ComponentProps<"div">) => {
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const supabase = createClient();
 
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<LoginInputs>({
     resolver: zodResolver(LoginSchema),
   });
 
-  const onSubmit = (data: LoginInputs) => {
-    setError("");
-
-    const loginSuccess = login(data.email, data.password);
-
-    if (!loginSuccess) {
-      setError("Invalid email or password");
+  const onSubmit = async (data: LoginInputs) => {
+    setError(null);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: data.email,
+      password: data.password,
+    });
+    if (error) {
+      setError(error.message);
+      return;
     }
+    router.push("/dashboard");
   };
 
   return (
@@ -57,13 +60,9 @@ export function LoginForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
-              {error}
-            </div>
-          )}
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="flex flex-col gap-6">
+              {error && <p className="text-red-500 text-sm">{error}</p>}
               <div className="grid gap-3">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -72,6 +71,7 @@ export function LoginForm({
                   placeholder="m@example.com"
                   {...register("email")}
                   className={errors.email ? "border-red-500" : ""}
+                  disabled={isSubmitting}
                 />
                 {errors.email && (
                   <p className="text-red-500 text-xs mt-1">
@@ -89,6 +89,7 @@ export function LoginForm({
                   placeholder="Enter your password"
                   {...register("password")}
                   className={errors.password ? "border-red-500" : ""}
+                  disabled={isSubmitting}
                 />
                 {errors.password && (
                   <p className="text-red-500 text-xs mt-1">
@@ -97,8 +98,12 @@ export function LoginForm({
                 )}
               </div>
               <div className="flex flex-col gap-3">
-                <Button type="submit" className="w-full">
-                  Login
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Logging in..." : "Login"}
                 </Button>
               </div>
             </div>
@@ -113,4 +118,4 @@ export function LoginForm({
       </Card>
     </div>
   );
-}
+};
