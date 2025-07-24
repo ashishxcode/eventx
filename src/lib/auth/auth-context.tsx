@@ -5,13 +5,7 @@ import { User, AuthState } from "./types";
 import { useRouter } from "next/navigation";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 
-const AuthContext = createContext<
-  AuthState & {
-    login: (user: User) => Promise<void>;
-    logout: () => Promise<void>;
-    isLoading: boolean;
-  }
->({
+const AuthContext = createContext<AuthState>({
   user: null,
   isAuthenticated: false,
   login: async () => {},
@@ -24,7 +18,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-  const hasCheckedSession = useRef(false); // Track if session check has run
+  const hasCheckedSession = useRef(false);
 
   useEffect(() => {
     if (hasCheckedSession.current) {
@@ -78,9 +72,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
-    console.log("Checking session on mount...");
     checkSession();
-  }, [router]); // Removed setUser from dependencies
+  }, [router, setUser]);
 
   const login = async (newUser: User) => {
     try {

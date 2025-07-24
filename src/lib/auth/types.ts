@@ -7,6 +7,9 @@ export interface User {
 export interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
+  login: (user: User) => Promise<void>;
+  logout: () => Promise<void>;
+  isLoading: boolean;
 }
 
 export interface LoginInputs {
