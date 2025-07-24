@@ -1,57 +1,32 @@
+"use client";
+
 import { useState, useEffect } from "react";
 
-export function useLocalStorage<T>(key: string, initialValue: T) {
-  // State to track client-side rendering
-  const [isClient, setIsClient] = useState(false);
+export function useLocalStorage<T>(
+  key: string,
+  initialValue: T
+): [T, (value: T) => void] {
+  const [isMounted, setIsMounted] = useState(false);
+  const [value, setValue] = useState<T>(initialValue);
 
-  // State for storing the value
-  const [storedValue, setStoredValue] = useState<T>(() => {
-    // Always return initial value during SSR or before client hydration
-    return initialValue;
-  });
-
-  // Ensure client-side status and load from localStorage
   useEffect(() => {
-    // Mark as client-side
-    setIsClient(true);
-
-    // Attempt to retrieve from localStorage
-    try {
-      // Only attempt if we're in browser environment
-      const item = localStorage.getItem(key);
-      if (item) {
-        const parsedItem = JSON.parse(item);
-        setStoredValue(parsedItem);
+    setIsMounted(true);
+    const stored = localStorage.getItem(key);
+    if (stored) {
+      try {
+        setValue(JSON.parse(stored));
+      } catch (error) {
+        console.error("Error parsing localStorage", error);
       }
-    } catch (error) {
-      console.warn(`Error reading localStorage key "${key}":`, error);
     }
   }, [key]);
 
-  // Effect to update localStorage when value changes
-  useEffect(() => {
-    // Only update localStorage when on client and value has changed from initial
-    if (isClient && storedValue !== initialValue) {
-      try {
-        localStorage.setItem(key, JSON.stringify(storedValue));
-      } catch (error) {
-        console.warn(`Error setting localStorage key "${key}":`, error);
-      }
-    }
-  }, [isClient, key, storedValue, initialValue]);
-
-  // Custom setter that mimics useState
-  const setValue = (value: T | ((val: T) => T)) => {
-    try {
-      const valueToStore =
-        value instanceof Function ? value(storedValue) : value;
-
-      setStoredValue(valueToStore);
-    } catch (error) {
-      console.warn(`Error setting value for key "${key}":`, error);
+  const setLocalStorageValue = (newValue: T) => {
+    setValue(newValue);
+    if (isMounted) {
+      localStorage.setItem(key, JSON.stringify(newValue));
     }
   };
 
-  // If not on client, always return initial value to prevent hydration errors
-  return [isClient ? storedValue : initialValue, setValue] as const;
+  return [value, setLocalStorageValue];
 }
