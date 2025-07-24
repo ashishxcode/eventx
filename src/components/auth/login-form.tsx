@@ -1,6 +1,6 @@
 "use client";
+
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,17 +14,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createClient } from "@/utils/supabase/client";
-import { LoginSchema, type LoginInputs } from "@/types/auth";
+
+import { useAuth } from "@/lib/auth/auth-context";
 import Link from "next/link";
+import { validateCredentials } from "@/lib/auth/auth-utils";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { LoginSchema } from "@/schemas/auth";
+import { LoginInputs } from "@/lib/auth/types";
 
 export const LoginForm = ({
   className,
   ...props
 }: React.ComponentProps<"div">) => {
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
-  const supabase = createClient();
+  const { login } = useAuth();
+  const [storedUsers] = useLocalStorage<
+    Array<{ email: string; password: string; name: string }>
+  >("users", []);
 
   const {
     register,
@@ -36,15 +42,12 @@ export const LoginForm = ({
 
   const onSubmit = async (data: LoginInputs) => {
     setError(null);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: data.email,
-      password: data.password,
-    });
-    if (error) {
-      setError(error.message);
+    const storedUser = storedUsers.find((user) => user.email === data.email);
+    if (!storedUser || !validateCredentials(storedUser, data)) {
+      setError("Invalid email or password");
       return;
     }
-    router.push("/dashboard");
+    await login({ email: data.email, password: data.password });
   };
 
   return (

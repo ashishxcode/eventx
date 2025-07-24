@@ -1,4 +1,5 @@
 "use client";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -14,17 +15,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createClient } from "@/utils/supabase/client";
-import { SignupSchema, type SignupInputs } from "@/types/auth";
+import { useAuth } from "@/lib/auth/auth-context";
 import Link from "next/link";
+import { SignupSchema } from "@/schemas/auth";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { SignupInputs } from "@/lib/auth/types";
 
 export const SignupForm = ({
   className,
   ...props
 }: React.ComponentProps<"div">) => {
   const [error, setError] = useState<string | null>(null);
+  const { login } = useAuth();
   const router = useRouter();
-  const supabase = createClient();
+  const [users, setUsers] = useLocalStorage<
+    Array<{ email: string; password: string; name: string }>
+  >("users", []);
 
   const {
     register,
@@ -36,19 +42,36 @@ export const SignupForm = ({
 
   const onSubmit = async (data: SignupInputs) => {
     setError(null);
-    const { error } = await supabase.auth.signUp({
-      email: data.email,
-      password: data.password,
-      options: {
-        emailRedirectTo: `${location.origin}/auth/confirm`,
-        data: { display_name: data.name }, // Save as display_name
-      },
-    });
-    if (error) {
-      setError(error.message);
-      return;
+    try {
+      // Check if email already exists
+      if (users.some((user) => user.email === data.email)) {
+        setError("Email already exists");
+        return;
+      }
+
+      // Add new user to users array
+      const newUser = {
+        email: data.email,
+        password: data.password,
+        name: data.name,
+      };
+      setUsers([...users, newUser]);
+
+      // Wait for login to complete
+      await login(newUser);
+
+      // Verify user is set in LocalStorage
+      const storedUser = JSON.parse(localStorage.getItem("user") || "null");
+      if (!storedUser || storedUser.email !== data.email) {
+        setError("Failed to set user session. Please try again.");
+        return;
+      }
+
+      router.push("/dashboard");
+    } catch (err) {
+      setError("An error occurred during signup. Please try again.");
+      console.error("Signup error:", err);
     }
-    router.push("/check-email");
   };
 
   return (
