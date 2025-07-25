@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
+import Events from "@/components/events/events";
 
 export default async function DashboardPage() {
   const cookieStore = await cookies(); // Await the cookies() promise
@@ -12,7 +13,7 @@ export default async function DashboardPage() {
   return (
     <>
       <h1 className="text-2xl font-bold">Welcome</h1>
-      <p>This is a protected dashboard page.</p>
+      <Events />
     </>
   );
 }
