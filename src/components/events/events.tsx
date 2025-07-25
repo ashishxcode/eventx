@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, Grid, List, Plus, X } from "lucide-react";
 import { useState } from "react";
-import EventCreationDialog from "./create-event-form";
+import EventForm from "./event-form";
 
 // Color mapping for event types
 const EVENT_TYPE_COLORS = {
@@ -144,7 +144,7 @@ export default function Events() {
                 {event.title}
               </h3>
               <div className="flex space-x-2">
-                <EventCreationDialog
+                <EventForm
                   initialEvent={event}
                   triggerComponent={
                     <Button size="icon" variant="outline" className="h-8 w-8">
@@ -203,7 +203,7 @@ export default function Events() {
             </div>
           </div>
           <div className="flex space-x-2">
-            <EventCreationDialog
+            <EventForm
               initialEvent={event}
               triggerComponent={
                 <Button size="sm" variant="outline">
@@ -246,7 +246,7 @@ export default function Events() {
           </Button>
         </div>
         <div className="flex space-x-2">
-          <EventCreationDialog
+          <EventForm
             triggerComponent={
               <Button>
                 <Plus className="mr-2 h-4 w-4" /> Create Event
@@ -298,7 +298,7 @@ export default function Events() {
                             "mr-2 h-2 w-2 rounded-full",
                             EVENT_TYPE_COLORS[type]
                               ? EVENT_TYPE_COLORS[type].replace("text-", "bg-")
-                              : "bg-gray-400"
+                              : "bg-gray-400",
                           )}
                         />
                         {type}
@@ -343,9 +343,9 @@ export default function Events() {
                             CATEGORY_COLORS[category]
                               ? CATEGORY_COLORS[category].replace(
                                   "text-",
-                                  "bg-"
+                                  "bg-",
                                 )
-                              : "bg-gray-400"
+                              : "bg-gray-400",
                           )}
                         />
                         {category}
@@ -368,7 +368,7 @@ export default function Events() {
                 variant="outline"
                 className={cn(
                   "w-full justify-between overflow-hidden",
-                  !localFilters.dateRange.start && "text-muted-foreground"
+                  !localFilters.dateRange.start && "text-muted-foreground",
                 )}
               >
                 <div className="flex items-center">
@@ -425,7 +425,7 @@ export default function Events() {
             "grid gap-4",
             viewMode === "grid"
               ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-              : "grid-cols-1"
+              : "grid-cols-1",
           )}
         >
           {sortedEvents.map((event) => renderEventCard(event, viewMode))}

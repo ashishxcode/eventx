@@ -41,7 +41,7 @@ interface EventCreationDialogProps {
   triggerComponent?: ReactNode;
 }
 
-export function EventCreationDialog({
+function EventForm({
   initialEvent = null,
   triggerComponent,
 }: EventCreationDialogProps) {
@@ -149,7 +149,7 @@ export function EventCreationDialog({
       ) : (
         <DefaultTrigger />
       )}
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] overflow-auto max-h-2/3">
         <DialogHeader>
           <DialogTitle>
             {initialEvent ? "Update Event" : "Create New Event"}
@@ -354,4 +354,4 @@ export function EventCreationDialog({
   );
 }
 
-export default EventCreationDialog;
+export default EventForm;

@@ -24,7 +24,7 @@ export const eventSchema = z
       .refine((val) => /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(val), {
         message: "Invalid end time",
       }),
-    eventLink: z.string().url({ message: "Invalid URL" }).optional(),
+    eventLink: z.url().optional(),
     location: z.string().optional(),
   })
   .refine(
