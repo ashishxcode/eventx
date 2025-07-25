@@ -1,6 +1,6 @@
-import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
 import Events from "@/components/events/events";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 export default async function DashboardPage() {
   const cookieStore = await cookies(); // Await the cookies() promise
@@ -12,7 +12,6 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <h1 className="text-2xl font-bold">Welcome</h1>
       <Events />
     </>
   );
