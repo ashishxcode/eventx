@@ -9,8 +9,8 @@ export interface Event {
   description: string;
   eventType: "Online" | "In-Person" | "Hybrid";
   category: string;
-  startDate: string; // ISO string (e.g., "2025-07-24T14:00:00Z")
-  endDate: string; // ISO string
+  startDate: string | Date;
+  endDate: string | Date;
   eventLink?: string; // Required for Online events
   location?: string; // Optional for In-Person and Hybrid events
   createdAt: string; // ISO string
@@ -23,8 +23,8 @@ export interface EventInput {
   description: string;
   eventType: "Online" | "In-Person" | "Hybrid";
   category: string;
-  startDate: string;
-  endDate: string;
+  startDate: string | Date;
+  endDate: string | Date;
   eventLink?: string;
   location?: string;
 }

@@ -11,16 +11,33 @@ export const eventSchema = z
     startDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
       message: "Invalid start date",
     }),
+    startTime: z
+      .string()
+      .refine((val) => /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(val), {
+        message: "Invalid start time",
+      }),
     endDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
       message: "Invalid end date",
     }),
+    endTime: z
+      .string()
+      .refine((val) => /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(val), {
+        message: "Invalid end time",
+      }),
     eventLink: z.string().url({ message: "Invalid URL" }).optional(),
     location: z.string().optional(),
   })
-  .refine((data) => new Date(data.endDate) > new Date(data.startDate), {
-    message: "End date must be after start date",
-    path: ["endDate"],
-  })
+  .refine(
+    (data) => {
+      const startDateTime = new Date(`${data.startDate}T${data.startTime}`);
+      const endDateTime = new Date(`${data.endDate}T${data.endTime}`);
+      return endDateTime > startDateTime;
+    },
+    {
+      message: "End date and time must be after start date and time",
+      path: ["endDate"],
+    }
+  )
   .refine((data) => (data.eventType === "Online" ? !!data.eventLink : true), {
     message: "Event link is required for online events",
     path: ["eventLink"],
