@@ -1,13 +1,16 @@
 import React from "react";
 import ThemeToggle from "./theme-toggle";
 import AccountDropdown from "./account-dropdown";
+import Link from "next/link";
 
 export default function DashboardNavbar() {
   return (
-    <nav className="flex justify-between items-center p-4 border-b bg-background">
+    <nav className="sticky top-0 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16 w-full backdrop-blur-lg  z-10">
       {/* Logo */}
       <div className="flex items-center space-x-4">
-        <h1 className="text-xl font-bold">EventX</h1>
+        <Link href="/" className="text-2xl font-bold ">
+          EventX
+        </Link>
       </div>
 
       {/* Main Navigation Menu */}
