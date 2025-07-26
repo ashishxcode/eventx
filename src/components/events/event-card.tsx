@@ -69,17 +69,11 @@ export default function EventCard({ event, onEdit }: EventCardProps) {
   const typeConfig =
     EVENT_TYPE_MAP[event.eventType as keyof typeof EVENT_TYPE_MAP] ||
     EVENT_TYPE_MAP.Online;
-  const categoryConfig =
-    EVENT_CATEGORY_MAP[event.category as keyof typeof EVENT_CATEGORY_MAP] ||
-    EVENT_CATEGORY_MAP.Other;
   const TypeIcon = typeConfig.icon;
 
   return (
-    <Card
-      className="group relative h-full flex flex-col overflow-hidden border-0 bg-white dark:bg-gray-900 transition-all duration-200 cursor-pointer"
-      onClick={() => router.push(`/dashboard/events/${event.uuid}`)}
-    >
-      <CardHeader className="flex justify-between">
+    <Card onClick={() => router.push(`/dashboard/events/${event.uuid}`)}>
+      <CardHeader className="flex items-start justify-between">
         <div>
           <CardTitle className="text-lg font-bold line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-tight mb-2">
             {event.title}
@@ -91,9 +85,9 @@ export default function EventCard({ event, onEdit }: EventCardProps) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
-              size="sm"
+              size="icon"
               variant="ghost"
-              className="h-8 w-8 p-0 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               onClick={(e) => e.stopPropagation()}
             >
               <MoreVertical className="w-4 h-4" />
@@ -191,43 +185,19 @@ export default function EventCard({ event, onEdit }: EventCardProps) {
       <CardFooter className="gap-2">
         <Badge
           variant="secondary"
-          className={cn(
-            "text-xs font-medium px-3 py-1 rounded-full",
-            eventStatus.className
-          )}
+          className={cn("text-sm font-medium px-3 py-1", eventStatus.className)}
         >
-          <div
-            className={cn(
-              "w-2 h-2 rounded-full mr-2",
-              eventStatus.label === "Ongoing"
-                ? "bg-green-500 animate-pulse"
-                : eventStatus.label === "Upcoming"
-                ? "bg-blue-500"
-                : "bg-gray-400"
-            )}
-          />
+          {eventStatus.status === "ongoing" && (
+            <div className="w-2 h-2 bg-current rounded-full mr-2 animate-pulse" />
+          )}
           {eventStatus.label}
         </Badge>
-        <Badge
-          variant="outline"
-          className={cn(
-            "text-xs px-3 py-1 rounded-full font-medium",
-            typeConfig.className
-          )}
-        >
+        <Badge variant="outline" className="text-sm px-3 py-1">
           <TypeIcon className="w-3 h-3 mr-1.5" />
-          <span className="hidden xs:inline">{event.eventType}</span>
-          <span className="xs:hidden">{event.eventType.charAt(0)}</span>
+          {event.eventType}
         </Badge>
-        <Badge
-          variant="outline"
-          className={cn(
-            "text-xs px-3 py-1 rounded-full font-medium",
-            categoryConfig.className
-          )}
-        >
-          <span className="hidden sm:inline">{event.category}</span>
-          <span className="sm:hidden">{event.category.substring(0, 4)}</span>
+        <Badge variant="outline" className="text-sm px-3 py-1">
+          {event.category}
         </Badge>
       </CardFooter>
     </Card>
