@@ -1,19 +1,97 @@
+import { EventFormData } from "@/schemas/event";
 import { Event } from "./types";
 
-export function hasTimeConflict(events: Event[], newEvent: Event): boolean {
-  const newStart = new Date(newEvent.startDate);
-  const newEnd = new Date(newEvent.endDate);
-
+export const hasTimeConflict = (events: Event[], newEvent: Event): boolean => {
+  // Existing implementation (assumed to be unchanged)
   return events.some((event) => {
-    const start = new Date(event.startDate);
-    const end = new Date(event.endDate);
+    const eventStart = new Date(event.startDate);
+    const eventEnd = new Date(event.endDate);
+    const newStart = new Date(newEvent.startDate);
+    const newEnd = new Date(newEvent.endDate);
+
     return (
-      (newStart >= start && newStart < end) ||
-      (newEnd > start && newEnd <= end) ||
-      (newStart <= start && newEnd >= end)
+      (newStart >= eventStart && newStart < eventEnd) ||
+      (newEnd > eventStart && newEnd <= eventEnd) ||
+      (newStart <= eventStart && newEnd >= eventEnd)
     );
   });
-}
+};
+
+export const prepareInitialValues = (event: Event | null): EventFormData => {
+  if (event) {
+    const start = new Date(event.startDate);
+    const end = new Date(event.endDate);
+    return {
+      title: event.title,
+      description: event.description,
+      eventType: event.eventType,
+      category: event.category,
+      startDate: start.toISOString().split("T")[0],
+      startTime: start.toTimeString().slice(0, 5),
+      endDate: end.toISOString().split("T")[0],
+      endTime: end.toTimeString().slice(0, 5),
+      location: event.location || "",
+      eventLink: event.eventLink || "",
+    };
+  }
+
+  // Default values for new event
+  const now = new Date();
+  const twoHoursLater = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+
+  return {
+    title: "",
+    description: "",
+    eventType: "In-Person",
+    category: "",
+    startDate: now.toISOString().split("T")[0],
+    startTime: now.toTimeString().slice(0, 5),
+    endDate: twoHoursLater.toISOString().split("T")[0],
+    endTime: twoHoursLater.toTimeString().slice(0, 5),
+    location: "",
+    eventLink: "",
+  };
+};
+
+export const createEventData = (
+  data: EventFormData,
+  initialEvent: Event | null,
+  user: { name?: string; email?: string } | null
+): Event => {
+  return {
+    uuid: initialEvent?.uuid || crypto.randomUUID(),
+    title: data.title,
+    description: data.description,
+    eventType: data.eventType,
+    category: data.category,
+    startDate: new Date(`${data.startDate}T${data.startTime}`).toISOString(),
+    endDate: new Date(`${data.endDate}T${data.endTime}`).toISOString(),
+    location: data.eventType !== "Online" ? data.location : undefined,
+    eventLink: data.eventType === "Online" ? data.eventLink : undefined,
+    organizer: initialEvent?.organizer || {
+      name: user?.name || "Unknown",
+      email: user?.email || "unknown@example.com",
+    },
+    createdAt: initialEvent?.createdAt || new Date().toISOString(),
+  };
+};
+
+export const formatConflictingEventDetails = (events: Event[]): string[] => {
+  return events.map((event) => {
+    const start =
+      new Date(event.startDate).toLocaleDateString() +
+      " " +
+      new Date(event.startDate).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    const end = new Date(event.endDate).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    return `${event.title} (${start} - ${end})`;
+  });
+};
 
 export function filterEvents(
   events: Event[],
@@ -54,3 +132,18 @@ export function sortEvents(
     return a.title.localeCompare(b.title);
   });
 }
+
+export const formatDateTime = (startDate: string, endDate: string): string => {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const date = start.toLocaleDateString();
+  const startTime = start.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const endTime = end.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return `${date}, ${startTime} - ${endTime}`;
+};
