@@ -17,13 +17,6 @@ export default function DashboardNavbar() {
         <Link href="/dashboard" className="hover:underline">
           Dashboard
         </Link>
-
-        {/* Separator */}
-        <div className="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
-
-        <Link href="/events" className="hover:underline">
-          Events
-        </Link>
       </div>
 
       {/* Right Side - Theme Toggle and Account Menu */}
