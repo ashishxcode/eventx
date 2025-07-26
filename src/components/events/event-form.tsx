@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -35,6 +34,7 @@ import {
   prepareInitialValues,
   createEventData,
   formatConflictingEventDetails,
+  calculateDuration,
 } from "@/lib/events/event-utils";
 import { type EventFormData, eventSchema } from "@/schemas/event";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -50,7 +50,7 @@ import {
   EVENT_TYPE_ICONS,
   SECTION_TITLES,
 } from "@/lib/events/event-constants";
-import { AlertTriangle, Clock } from "lucide-react";
+import { AlertTriangle, Clock, X, Info } from "lucide-react";
 
 interface EventFormProps {
   initialEvent?: Event | null;
@@ -84,8 +84,8 @@ export default function EventForm({
   const handleOpenChange = (open: boolean) => {
     setIsDialogOpen(open);
     if (!open) {
-      setConflictEventError(null); // Clear error when dialog closes
-      form.clearErrors(); // Clear form validation errors when dialog closes
+      setConflictEventError(null);
+      form.clearErrors();
       if (onClose) {
         onClose();
       }
@@ -98,15 +98,42 @@ export default function EventForm({
   });
 
   const watchEventType = form.watch("eventType");
+  const watchStartDate = form.watch("startDate");
+  const watchStartTime = form.watch("startTime");
+  const watchEndDate = form.watch("endDate");
+  const watchEndTime = form.watch("endTime");
+
+  // Calculate duration for display
+  const eventDuration =
+    watchStartDate && watchStartTime && watchEndDate && watchEndTime
+      ? calculateDuration(
+          watchStartDate,
+          watchStartTime,
+          watchEndDate,
+          watchEndTime
+        )
+      : null;
+
+  // Check if times are valid for duration display
+  const isValidDuration = (() => {
+    if (!watchStartDate || !watchStartTime || !watchEndDate || !watchEndTime)
+      return false;
+    try {
+      const start = new Date(`${watchStartDate}T${watchStartTime}`);
+      const end = new Date(`${watchEndDate}T${watchEndTime}`);
+      return end > start;
+    } catch {
+      return false;
+    }
+  })();
 
   useEffect(() => {
     form.reset(prepareInitialValues(initialEvent));
-    setConflictEventError(null); // Clear error when resetting form
-    form.clearErrors(); // Clear form validation errors when resetting form
+    setConflictEventError(null);
+    form.clearErrors();
   }, [initialEvent, form]);
 
   const onSubmit = (data: EventFormData) => {
-    // Clear any existing form validation errors before checking for errors
     form.clearErrors();
 
     if (!user) {
@@ -114,7 +141,6 @@ export default function EventForm({
         message: ERROR_MESSAGES.NOT_LOGGED_IN,
         conflictingEvents: [],
       });
-      // Scroll to top to show the error
       if (scrollContainerRef.current) {
         scrollContainerRef.current.scrollTo({ top: 0, behavior: "smooth" });
       }
@@ -125,8 +151,8 @@ export default function EventForm({
 
     // Check for time conflicts before saving
     const eventsToCheck = initialEvent
-      ? events.filter((event) => event.uuid !== initialEvent.uuid) // Exclude current event when updating
-      : events; // Check all events when creating new
+      ? events.filter((event) => event.uuid !== initialEvent.uuid)
+      : events;
 
     if (hasTimeConflict(eventsToCheck, eventData)) {
       const conflictingEvents = eventsToCheck.filter((event) => {
@@ -146,7 +172,6 @@ export default function EventForm({
         message: ERROR_MESSAGES.TIME_CONFLICT,
         conflictingEvents: formatConflictingEventDetails(conflictingEvents),
       });
-      // Scroll to top to show the error
       if (scrollContainerRef.current) {
         scrollContainerRef.current.scrollTo({ top: 0, behavior: "smooth" });
       }
@@ -160,7 +185,7 @@ export default function EventForm({
     if (success) {
       handleOpenChange(false);
       form.reset(prepareInitialValues(null));
-      setConflictEventError(null); // Clear error on successful submission
+      setConflictEventError(null);
     } else {
       setConflictEventError({
         message: initialEvent
@@ -168,19 +193,9 @@ export default function EventForm({
           : ERROR_MESSAGES.CREATE_FAILED,
         conflictingEvents: [],
       });
-      // Scroll to top to show the error
       if (scrollContainerRef.current) {
         scrollContainerRef.current.scrollTo({ top: 0, behavior: "smooth" });
       }
-    }
-  };
-
-  const handleSubmit = async () => {
-    setConflictEventError(null); // Clear previous errors before validation
-    const isValid = await form.trigger();
-    if (isValid) {
-      const data = form.getValues();
-      onSubmit(data);
     }
   };
 
@@ -190,349 +205,448 @@ export default function EventForm({
         <DialogTrigger asChild>{triggerComponent}</DialogTrigger>
       )}
       <DialogContent
-        className="sm:max-w-[700px] max-h-[90vh] p-0 overflow-hidden flex flex-col"
         showCloseButton={false}
+        className="w-[95vw] max-w-[700px] h-[95vh] max-h-[95vh] p-0 overflow-hidden flex flex-col"
       >
-        {/* Sticky Header */}
-        <div className="sticky top-0 z-10 bg-background border-b p-6 pb-4">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">
-              {initialEvent ? "Edit Event" : "Create New Event"}
-            </DialogTitle>
-            <DialogDescription>
-              {initialEvent
-                ? "Update the details of your event."
-                : "Fill in the details to create a new event."}
-            </DialogDescription>
-          </DialogHeader>
-        </div>
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="h-full flex flex-col"
+          >
+            {/* Header with close button */}
+            <DialogHeader className="flex-shrink-0 bg-background border-b p-4">
+              <div className="flex items-center justify-between">
+                <DialogTitle className="text-lg sm:text-xl font-bold pr-8">
+                  {initialEvent ? "Edit Event" : "Create New Event"}
+                </DialogTitle>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0"
+                  onClick={() => handleOpenChange(false)}
+                >
+                  <X className="h-4 w-4" />
+                  <span className="sr-only">Close</span>
+                </Button>
+              </div>
+            </DialogHeader>
 
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto px-6" ref={scrollContainerRef}>
-          <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(onSubmit)}
-              className="space-y-6 py-4"
+            {/* Scrollable content */}
+            <div
+              className="flex-1 overflow-y-auto px-4 sm:px-6"
+              ref={scrollContainerRef}
             >
-              {/* Error Message Display */}
-              {conflictEventError && (
-                <Alert variant="destructive">
-                  <AlertTriangle className="h-5 w-5" />
-                  <AlertTitle>Error</AlertTitle>
-                  <AlertDescription>
-                    <p>{conflictEventError.message}</p>
-                    {conflictEventError.conflictingEvents.length > 0 && (
-                      <>
-                        <p className="mt-2 font-semibold">
-                          Conflicting Events:
-                        </p>
-                        <ul className="list-disc pl-5">
-                          {conflictEventError.conflictingEvents.map(
-                            (event, index) => (
-                              <li key={index}>{event}</li>
-                            )
-                          )}
-                        </ul>
-                      </>
-                    )}
-                  </AlertDescription>
-                </Alert>
-              )}
+              <div className="space-y-4">
+                {/* Error Message Display */}
+                {conflictEventError && (
+                  <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5" />
+                    <AlertTitle className="text-sm sm:text-base">
+                      Error
+                    </AlertTitle>
+                    <AlertDescription className="text-sm">
+                      <p>{conflictEventError.message}</p>
+                      {conflictEventError.conflictingEvents.length > 0 && (
+                        <>
+                          <p className="mt-2 font-semibold">
+                            Conflicting Events:
+                          </p>
+                          <ul className="list-disc pl-5 space-y-1">
+                            {conflictEventError.conflictingEvents.map(
+                              (event, index) => (
+                                <li key={index} className="text-xs sm:text-sm">
+                                  {event}
+                                </li>
+                              )
+                            )}
+                          </ul>
+                        </>
+                      )}
+                    </AlertDescription>
+                  </Alert>
+                )}
 
-              {/* Basic Information */}
-              <Card>
-                <CardContent className="space-y-4">
-                  <h3 className="text-lg font-semibold flex items-center">
-                    <EVENT_TYPE_ICONS.default className="w-5 h-5 mr-2" />
-                    <span className="ml-2">
-                      {SECTION_TITLES.BASIC_INFORMATION}
-                    </span>
-                  </h3>
+                {/* Basic Information */}
+                <Card>
+                  <CardContent className="space-y-4">
+                    <h3 className="text-base sm:text-lg font-semibold flex items-center">
+                      <EVENT_TYPE_ICONS.default className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
+                      <span className="ml-1 sm:ml-2">
+                        {SECTION_TITLES.BASIC_INFORMATION}
+                      </span>
+                    </h3>
 
-                  <FormField
-                    control={form.control}
-                    name="title"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Event Title *</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Enter a compelling event title"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Description *</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Describe your event, what attendees can expect, and any important details..."
-                            className="min-h-[100px]"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                     <FormField
                       control={form.control}
-                      name="eventType"
+                      name="title"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Event Type *</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select event type" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {EVENT_TYPES.map((type) => {
-                                const Icon = type.icon;
-                                return (
+                          <FormLabel className="text-sm sm:text-base">
+                            Event Title *
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Enter a compelling event title"
+                              className="text-sm sm:text-base"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage className="text-xs sm:text-sm" />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm sm:text-base">
+                            Description *
+                          </FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Describe your event, what attendees can expect, and any important details..."
+                              className="min-h-[80px] sm:min-h-[100px] text-sm sm:text-base resize-none"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage className="text-xs sm:text-sm" />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                      <FormField
+                        control={form.control}
+                        name="eventType"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm sm:text-base">
+                              Event Type *
+                            </FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger className="w-full text-sm sm:text-base">
+                                  <SelectValue placeholder="Select event type" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {EVENT_TYPES.map((type) => {
+                                  const Icon = type.icon;
+                                  return (
+                                    <SelectItem
+                                      key={type.value}
+                                      value={type.value}
+                                      className="text-sm sm:text-base"
+                                    >
+                                      <div className="flex items-center">
+                                        <Icon className="w-3 h-3 sm:w-4 sm:h-4 mr-2 flex-shrink-0" />
+                                        {type.label}
+                                      </div>
+                                    </SelectItem>
+                                  );
+                                })}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage className="text-xs sm:text-sm" />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="category"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm sm:text-base">
+                              Category *
+                            </FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger className="w-full text-sm sm:text-base">
+                                  <SelectValue placeholder="Select category" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {EVENT_CATEGORIES.map((category) => (
                                   <SelectItem
-                                    key={type.value}
-                                    value={type.value}
+                                    key={category.value}
+                                    value={category.value}
+                                    className="text-sm sm:text-base"
                                   >
-                                    <div className="flex items-center">
-                                      <Icon className="w-4 h-4 mr-2" />
-                                      {type.label}
-                                    </div>
+                                    {category.label}
                                   </SelectItem>
-                                );
-                              })}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage className="text-xs sm:text-sm" />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
 
-                    <FormField
-                      control={form.control}
-                      name="category"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Category *</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
+                {/* Date & Time */}
+                <Card>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-base sm:text-lg font-semibold flex items-center">
+                        <Clock className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
+                        <span className="ml-1 sm:ml-2">
+                          {SECTION_TITLES.DATE_TIME}
+                        </span>
+                      </h3>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                      <FormField
+                        control={form.control}
+                        name="startDate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm sm:text-base">
+                              Start Date *
+                            </FormLabel>
                             <FormControl>
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select category" />
-                              </SelectTrigger>
+                              <Input
+                                type="date"
+                                className="text-sm sm:text-base"
+                                min={new Date().toISOString().split("T")[0]} // Prevent past dates
+                                {...field}
+                              />
                             </FormControl>
-                            <SelectContent>
-                              {EVENT_CATEGORIES.map((category) => (
-                                <SelectItem
-                                  key={category.value}
-                                  value={category.value}
-                                >
-                                  {category.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+                            <FormMessage className="text-xs sm:text-sm" />
+                          </FormItem>
+                        )}
+                      />
 
-              {/* Date & Time */}
-              <Card>
-                <CardContent className="space-y-4">
-                  <h3 className="text-lg font-semibold flex items-center">
-                    <Clock className="w-5 h-5 mr-2" />
-                    {SECTION_TITLES.DATE_TIME}
-                  </h3>
+                      <FormField
+                        control={form.control}
+                        name="startTime"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm sm:text-base">
+                              Start Time *
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type="time"
+                                className="text-sm sm:text-base"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage className="text-xs sm:text-sm" />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="startDate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Start Date *</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                      <FormField
+                        control={form.control}
+                        name="endDate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm sm:text-base">
+                              End Date *
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type="date"
+                                className="text-sm sm:text-base"
+                                min={
+                                  watchStartDate ||
+                                  new Date().toISOString().split("T")[0]
+                                } // End date can't be before start date
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage className="text-xs sm:text-sm" />
+                          </FormItem>
+                        )}
+                      />
 
-                    <FormField
-                      control={form.control}
-                      name="startTime"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Start Time *</FormLabel>
-                          <FormControl>
-                            <Input type="time" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                      <FormField
+                        control={form.control}
+                        name="endTime"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm sm:text-base">
+                              End Time *
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type="time"
+                                className="text-sm sm:text-base"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage className="text-xs sm:text-sm" />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="endDate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>End Date *</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    {/* Duration warning for very short or very long events */}
+                    {eventDuration && isValidDuration && (
+                      <div className="text-muted-foreground">
+                        {(() => {
+                          const start = new Date(
+                            `${watchStartDate}T${watchStartTime}`
+                          );
+                          const end = new Date(
+                            `${watchEndDate}T${watchEndTime}`
+                          );
+                          const durationMs = end.getTime() - start.getTime();
+                          const minutes = durationMs / (1000 * 60);
 
-                    <FormField
-                      control={form.control}
-                      name="endTime"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>End Time *</FormLabel>
-                          <FormControl>
-                            <Input type="time" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+                          if (minutes < 15) {
+                            return (
+                              <div className="flex items-center text-amber-600">
+                                <AlertTriangle className="w-3 h-3 mr-1" />
+                                Event duration is very short ({eventDuration})
+                              </div>
+                            );
+                          } else if (minutes > 480) {
+                            // 8 hours
+                            return (
+                              <div className="flex items-center text-blue-600 dark:text-blue-400">
+                                <Info className="w-3 h-3 mr-1" />
+                                This is a long event ({eventDuration})
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
 
-              {/* Location/Link */}
-              <Card>
-                <CardContent className="space-y-4">
-                  <h3 className="text-lg font-semibold flex items-center">
-                    {(() => {
-                      const Icon =
-                        EVENT_TYPE_ICONS[
-                          watchEventType as keyof typeof EVENT_TYPE_ICONS
-                        ] || EVENT_TYPE_ICONS.default;
-                      return <Icon className="w-4 h-4 mr-2" />;
-                    })()}
-                    <span className="ml-2">
-                      {watchEventType === "Online"
-                        ? SECTION_TITLES.EVENT_LINK
-                        : SECTION_TITLES.LOCATION_DETAILS}
-                    </span>
-                  </h3>
+                {/* Location/Link */}
+                <Card>
+                  <CardContent className="space-y-4 ">
+                    <h3 className="text-base sm:text-lg font-semibold flex items-center">
+                      {(() => {
+                        const Icon =
+                          EVENT_TYPE_ICONS[
+                            watchEventType as keyof typeof EVENT_TYPE_ICONS
+                          ] || EVENT_TYPE_ICONS.default;
+                        return (
+                          <Icon className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
+                        );
+                      })()}
+                      <span className="ml-1 sm:ml-2">
+                        {watchEventType === "Online"
+                          ? SECTION_TITLES.EVENT_LINK
+                          : SECTION_TITLES.LOCATION_DETAILS}
+                      </span>
+                    </h3>
 
-                  {watchEventType === "Online" && (
-                    <FormField
-                      control={form.control}
-                      name="eventLink"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Event Link *</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="https://zoom.us/j/..."
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Provide the link where attendees can join the online
-                            event
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  )}
+                    {watchEventType === "Online" && (
+                      <FormField
+                        control={form.control}
+                        name="eventLink"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm sm:text-base">
+                              Event Link *
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="https://zoom.us/j/..."
+                                className="text-sm sm:text-base"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormDescription className="text-xs sm:text-sm">
+                              Provide the link where attendees can join the
+                              online event
+                            </FormDescription>
+                            <FormMessage className="text-xs sm:text-sm" />
+                          </FormItem>
+                        )}
+                      />
+                    )}
 
-                  {(watchEventType === "In-Person" ||
-                    watchEventType === "Hybrid") && (
-                    <FormField
-                      control={form.control}
-                      name="location"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Location *</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="Enter the venue address or location details"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Physical address or venue where the event will take
-                            place
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  )}
+                    {(watchEventType === "In-Person" ||
+                      watchEventType === "Hybrid") && (
+                      <FormField
+                        control={form.control}
+                        name="location"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm sm:text-base">
+                              Location *
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Enter the venue address or location details"
+                                className="text-sm sm:text-base"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormDescription className="text-xs sm:text-sm">
+                              Physical address or venue where the event will
+                              take place
+                            </FormDescription>
+                            <FormMessage className="text-xs sm:text-sm" />
+                          </FormItem>
+                        )}
+                      />
+                    )}
 
-                  {watchEventType === "Hybrid" && (
-                    <FormField
-                      control={form.control}
-                      name="eventLink"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Online Link (Optional)</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="https://zoom.us/j/..."
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Link for remote attendees to join virtually
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  )}
-                </CardContent>
-              </Card>
-            </form>
-          </Form>
-        </div>
+                    {watchEventType === "Hybrid" && (
+                      <FormField
+                        control={form.control}
+                        name="eventLink"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm sm:text-base">
+                              Online Link (Optional)
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="https://zoom.us/j/..."
+                                className="text-sm sm:text-base"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormDescription className="text-xs sm:text-sm">
+                              Link for remote attendees to join virtually
+                            </FormDescription>
+                            <FormMessage className="text-xs sm:text-sm" />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
 
-        {/* Sticky Footer */}
-        <div className="sticky bottom-0 z-10 bg-background border-t p-4">
-          <DialogFooter className="gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => handleOpenChange(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="button" onClick={handleSubmit}>
-              {initialEvent ? "Update Event" : "Create Event"}
-            </Button>
-          </DialogFooter>
-        </div>
+            {/* Footer with action buttons */}
+            <DialogFooter className="flex-shrink-0 bg-background border-t p-4 sm:p-6">
+              <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-4 w-full sm:w-auto">
+                <Button
+                  type="submit"
+                  className="w-full sm:w-auto text-sm sm:text-base"
+                >
+                  {initialEvent ? "Update Event" : "Create Event"}
+                </Button>
+              </div>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

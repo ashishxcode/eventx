@@ -14,7 +14,7 @@ export const eventSchema = z
     startTime: z
       .string()
       .refine((val) => /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(val), {
-        message: "Invalid start time",
+        message: "Invalid start time format (HH:MM)",
       }),
     endDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
       message: "Invalid end date",
@@ -22,9 +22,8 @@ export const eventSchema = z
     endTime: z
       .string()
       .refine((val) => /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(val), {
-        message: "Invalid end time",
+        message: "Invalid end time format (HH:MM)",
       }),
-    // Fix: Handle empty strings and only validate URL format when there's content
     eventLink: z
       .string()
       .optional()
@@ -46,22 +45,71 @@ export const eventSchema = z
   })
   .refine(
     (data) => {
-      const startDateTime = new Date(`${data.startDate}T${data.startTime}`);
-      const endDateTime = new Date(`${data.endDate}T${data.endTime}`);
-      return endDateTime > startDateTime;
+      try {
+        const startDateTime = new Date(`${data.startDate}T${data.startTime}`);
+        const endDateTime = new Date(`${data.endDate}T${data.endTime}`);
+
+        // Check if dates are valid
+        if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
+          return false;
+        }
+
+        return endDateTime > startDateTime;
+      } catch {
+        return false;
+      }
     },
     {
       message: "End date and time must be after start date and time",
       path: ["endDate"],
     }
   )
-  .refine((data) => (data.eventType === "Online" ? !!data.eventLink : true), {
-    message: "Event link is required for online events",
-    path: ["eventLink"],
-  })
+  .refine(
+    (data) => {
+      // Check if start date is not in the past (optional - remove if not needed)
+      try {
+        const startDateTime = new Date(`${data.startDate}T${data.startTime}`);
+        const now = new Date();
+        return startDateTime >= now;
+      } catch {
+        return true; // If we can't parse, let other validations handle it
+      }
+    },
+    {
+      message: "Event cannot be scheduled in the past",
+      path: ["startDate"],
+    }
+  )
+  .refine(
+    (data) => {
+      // Minimum duration check (optional - adjust as needed)
+      try {
+        const startDateTime = new Date(`${data.startDate}T${data.startTime}`);
+        const endDateTime = new Date(`${data.endDate}T${data.endTime}`);
+        const durationMinutes =
+          (endDateTime.getTime() - startDateTime.getTime()) / (1000 * 60);
+        return durationMinutes >= 15; // Minimum 15 minutes
+      } catch {
+        return true; // If we can't parse, let other validations handle it
+      }
+    },
+    {
+      message: "Event must be at least 15 minutes long",
+      path: ["endTime"],
+    }
+  )
+  .refine(
+    (data) => (data.eventType === "Online" ? !!data.eventLink?.trim() : true),
+    {
+      message: "Event link is required for online events",
+      path: ["eventLink"],
+    }
+  )
   .refine(
     (data) =>
-      ["In-Person", "Hybrid"].includes(data.eventType) ? !!data.location : true,
+      ["In-Person", "Hybrid"].includes(data.eventType)
+        ? !!data.location?.trim()
+        : true,
     {
       message: "Location is required for in-person or hybrid events",
       path: ["location"],
@@ -69,3 +117,13 @@ export const eventSchema = z
   );
 
 export type EventFormData = z.infer<typeof eventSchema>;
+
+// Helper function to format date for better error messages
+export const formatDateTime = (date: string, time: string): string => {
+  try {
+    const dateTime = new Date(`${date}T${time}`);
+    return dateTime.toLocaleString();
+  } catch {
+    return `${date} ${time}`;
+  }
+};

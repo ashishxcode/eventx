@@ -147,3 +147,25 @@ export const formatDateTime = (startDate: string, endDate: string): string => {
   });
   return `${date}, ${startTime} - ${endTime}`;
 };
+
+export const calculateDuration = (
+  startDate: string,
+  startTime: string,
+  endDate: string,
+  endTime: string
+): string => {
+  try {
+    const start = new Date(`${startDate}T${startTime}`);
+    const end = new Date(`${endDate}T${endTime}`);
+    const durationMs = end.getTime() - start.getTime();
+    const hours = Math.floor(durationMs / (1000 * 60 * 60));
+    const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`;
+    }
+    return `${minutes}m`;
+  } catch {
+    return "Invalid duration";
+  }
+};
