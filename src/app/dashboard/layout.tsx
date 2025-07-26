@@ -9,10 +9,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
       <EventProvider>
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen flex flex-col bg-background">
           <DashboardNavbar />
-          <main className="flex-1 overflow-x-hidden overflow-y-auto ">
-            <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+          <main className="flex-1 flex flex-col  overflow-x-hidden overflow-y-auto ">
+            <div className="container flex-1 flex flex-col max-w-7xl  p-4 sm:p-8 mx-auto">
               {children}
             </div>
           </main>
