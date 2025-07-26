@@ -5,6 +5,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -13,15 +14,14 @@ import { cn } from "@/lib/utils";
 import { format, isAfter, isBefore } from "date-fns";
 import {
   CalendarIcon,
-  Clock,
   MapPin,
   ExternalLink,
-  Eye,
   Edit,
   Trash2,
+  MoreVertical,
 } from "lucide-react";
 import type { Event } from "@/lib/events/types";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,6 +33,12 @@ import {
   AlertDialogTrigger,
   AlertDialogFooter,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useEvents } from "@/lib/events/event-context";
 import {
   EVENT_TYPE_MAP,
@@ -47,6 +53,7 @@ interface EventCardProps {
 
 export default function EventCard({ event, onEdit }: EventCardProps) {
   const { deleteEvent } = useEvents();
+  const router = useRouter();
 
   const getEventStatus = () => {
     const now = new Date();
@@ -68,120 +75,161 @@ export default function EventCard({ event, onEdit }: EventCardProps) {
   const TypeIcon = typeConfig.icon;
 
   return (
-    <Card className="group hover:shadow-lg transition-all duration-300 border bg-card">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2">
-              <Badge
-                variant="secondary"
-                className={cn("text-xs font-medium", eventStatus.className)}
-              >
-                {eventStatus.label}
-              </Badge>
-              <Badge
-                variant="outline"
-                className={cn("text-xs border", typeConfig.className)}
-              >
-                <TypeIcon className="w-3 h-3 mr-1" />
-                {event.eventType}
-              </Badge>
-            </div>
-            <CardTitle className="text-lg font-semibold line-clamp-2 group-hover:text-primary transition-colors">
-              {event.title}
-            </CardTitle>
-            <CardDescription className="line-clamp-2 mt-1">
-              {event.description}
-            </CardDescription>
-          </div>
+    <Card
+      className="group relative h-full flex flex-col overflow-hidden border-0 bg-white dark:bg-gray-900 transition-all duration-200 cursor-pointer"
+      onClick={() => router.push(`/dashboard/events/${event.uuid}`)}
+    >
+      <CardHeader className="flex justify-between">
+        <div>
+          <CardTitle className="text-lg font-bold line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-tight mb-2">
+            {event.title}
+          </CardTitle>
+          <CardDescription className="line-clamp-1 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+            {event.description}
+          </CardDescription>
         </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 w-8 p-0 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MoreVertical className="w-4 h-4" />
+              <span className="sr-only">More options</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-32">
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(event);
+              }}
+              className="cursor-pointer"
+            >
+              <Edit className="w-4 h-4 mr-2" />
+              Edit
+            </DropdownMenuItem>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <DropdownMenuItem
+                  onSelect={(e) => e.preventDefault()}
+                  className="cursor-pointer text-red-600 focus:text-red-600 dark:text-red-400 dark:focus:text-red-400"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="max-w-sm sm:max-w-lg mx-4 rounded-xl border-0 shadow-2xl">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="text-lg font-semibold">
+                    Delete Event
+                  </AlertDialogTitle>
+                  <AlertDialogDescription className="text-sm text-gray-600 dark:text-gray-400">
+                    Are you sure you want to delete &quot;{event.title}&quot;?
+                    This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                  <AlertDialogCancel className="w-full sm:w-auto rounded-lg">
+                    Cancel
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => deleteEvent(event.uuid)}
+                    className="bg-red-600 hover:bg-red-700 w-full sm:w-auto rounded-lg"
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </CardHeader>
-      <CardContent className="pt-0">
-        <div className="space-y-3">
-          <div className="flex items-center text-sm text-muted-foreground">
-            <CalendarIcon className="w-4 h-4 mr-2" />
-            <span>{format(new Date(event.startDate), "MMM dd, yyyy")}</span>
-            <Clock className="w-4 h-4 ml-4 mr-2" />
-            <span>{format(new Date(event.startDate), "HH:mm")}</span>
+
+      <CardContent className="relative flex-1 flex flex-col justify-between space-y-4">
+        <div className="space-y-2">
+          <div className="grid grid-cols-1 gap-2">
+            <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/50 mr-3">
+                <CalendarIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              </div>
+              <span className="font-medium">
+                {format(new Date(event.startDate), "HH:mm a")} -{" "}
+                {format(new Date(event.startDate), "MMM dd, yyyy")}
+              </span>
+            </div>
           </div>
+
           {event.location && (
-            <div className="flex items-center text-sm text-muted-foreground">
-              <MapPin className="w-4 h-4 mr-2" />
-              <span className="truncate">{event.location}</span>
+            <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 mr-3">
+                <MapPin className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <span className="font-medium truncate">{event.location}</span>
             </div>
           )}
+
           {event.eventLink && (
-            <div className="flex items-center text-sm text-muted-foreground">
-              <ExternalLink className="w-4 h-4 mr-2" />
+            <div className="flex items-center text-sm">
+              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-orange-50 dark:bg-orange-950/50 mr-3">
+                <ExternalLink className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+              </div>
               <a
                 href={event.eventLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary hover:underline truncate"
+                className="font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:underline truncate transition-colors"
               >
                 Join Event
               </a>
             </div>
           )}
-          <div className="flex items-center justify-between">
-            <Badge
-              variant="outline"
-              className={cn("text-xs border", categoryConfig.className)}
-            >
-              {event.category}
-            </Badge>
-            <div className="flex items-center gap-1">
-              <Button
-                size="sm"
-                variant="ghost"
-                asChild
-                className="h-8 w-8 p-0 hover:bg-accent"
-              >
-                <Link href={`/dashboard/events/${event.uuid}`}>
-                  <Eye className="w-4 h-4" />
-                </Link>
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-8 w-8 p-0 hover:bg-accent"
-                onClick={() => onEdit(event)}
-              >
-                <Edit className="w-4 h-4" />
-              </Button>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Event</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Are you sure you want to delete &quot;{event.title}&quot;?
-                      This action cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => deleteEvent(event.uuid)}
-                      className="bg-destructive hover:bg-destructive/90"
-                    >
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          </div>
         </div>
       </CardContent>
+      <CardFooter className="gap-2">
+        <Badge
+          variant="secondary"
+          className={cn(
+            "text-xs font-medium px-3 py-1 rounded-full",
+            eventStatus.className
+          )}
+        >
+          <div
+            className={cn(
+              "w-2 h-2 rounded-full mr-2",
+              eventStatus.label === "Ongoing"
+                ? "bg-green-500 animate-pulse"
+                : eventStatus.label === "Upcoming"
+                ? "bg-blue-500"
+                : "bg-gray-400"
+            )}
+          />
+          {eventStatus.label}
+        </Badge>
+        <Badge
+          variant="outline"
+          className={cn(
+            "text-xs px-3 py-1 rounded-full font-medium",
+            typeConfig.className
+          )}
+        >
+          <TypeIcon className="w-3 h-3 mr-1.5" />
+          <span className="hidden xs:inline">{event.eventType}</span>
+          <span className="xs:hidden">{event.eventType.charAt(0)}</span>
+        </Badge>
+        <Badge
+          variant="outline"
+          className={cn(
+            "text-xs px-3 py-1 rounded-full font-medium",
+            categoryConfig.className
+          )}
+        >
+          <span className="hidden sm:inline">{event.category}</span>
+          <span className="sm:hidden">{event.category.substring(0, 4)}</span>
+        </Badge>
+      </CardFooter>
     </Card>
   );
 }

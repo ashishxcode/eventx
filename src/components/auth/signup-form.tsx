@@ -76,99 +76,139 @@ export const SignupForm = ({
 
   return (
     <div
-      className={cn("flex flex-col gap-6 max-w-md sm:w-full", className)}
+      className={cn("flex flex-col gap-4 sm:gap-6 w-full max-w-sm sm:max-w-md mx-auto px-4 sm:px-0", className)}
       {...props}
     >
-      <Card>
-        <CardHeader>
-          <CardTitle>Create an account</CardTitle>
-          <CardDescription>
-            Enter your details below to create your account
+      <Card className="border-0 sm:border shadow-none sm:shadow-sm">
+        <CardHeader className="text-center px-4 sm:px-6 pt-6 sm:pt-6 pb-4">
+          <CardTitle className="text-xl sm:text-2xl font-bold">Create your account</CardTitle>
+          <CardDescription className="text-sm sm:text-base text-muted-foreground">
+            Join EventX to start organizing amazing events
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <div className="flex flex-col gap-6">
-              {error && <p className="text-red-500 text-sm">{error}</p>}
-              <div className="grid gap-3">
-                <Label htmlFor="name">Name</Label>
+        <CardContent className="px-4 sm:px-6 pb-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {error && (
+              <div className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400 rounded-lg border border-red-200 dark:border-red-800">
+                {error}
+              </div>
+            )}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-sm font-medium">
+                  Full name
+                </Label>
                 <Input
                   id="name"
                   type="text"
-                  placeholder="Your name"
+                  placeholder="Enter your full name"
+                  autoComplete="name"
                   {...register("name")}
-                  className={errors.name ? "border-red-500" : ""}
+                  className={cn(
+                    "h-10 sm:h-11 text-base",
+                    errors.name && "border-red-500 focus-visible:ring-red-500"
+                  )}
                   disabled={isSubmitting}
                 />
                 {errors.name && (
-                  <p className="text-red-500 text-xs mt-1">
+                  <p className="text-xs text-red-600 dark:text-red-400 mt-1">
                     {errors.name.message}
                   </p>
                 )}
               </div>
-              <div className="grid gap-3">
-                <Label htmlFor="email">Email</Label>
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-medium">
+                  Email address
+                </Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="m@example.com"
+                  placeholder="Enter your email"
+                  autoComplete="email"
                   {...register("email")}
-                  className={errors.email ? "border-red-500" : ""}
+                  className={cn(
+                    "h-10 sm:h-11 text-base",
+                    errors.email && "border-red-500 focus-visible:ring-red-500"
+                  )}
                   disabled={isSubmitting}
                 />
                 {errors.email && (
-                  <p className="text-red-500 text-xs mt-1">
+                  <p className="text-xs text-red-600 dark:text-red-400 mt-1">
                     {errors.email.message}
                   </p>
                 )}
               </div>
-              <div className="grid gap-3">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  {...register("password")}
-                  className={errors.password ? "border-red-500" : ""}
-                  disabled={isSubmitting}
-                />
-                {errors.password && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.password.message}
-                  </p>
-                )}
-              </div>
-              <div className="grid gap-3">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="Confirm your password"
-                  {...register("confirmPassword")}
-                  className={errors.confirmPassword ? "border-red-500" : ""}
-                  disabled={isSubmitting}
-                />
-                {errors.confirmPassword && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.confirmPassword.message}
-                  </p>
-                )}
-              </div>
-              <div className="flex flex-col gap-3">
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? "Signing up..." : "Sign Up"}
-                </Button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-sm font-medium">
+                    Password
+                  </Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Create password"
+                    autoComplete="new-password"
+                    {...register("password")}
+                    className={cn(
+                      "h-10 sm:h-11 text-base",
+                      errors.password && "border-red-500 focus-visible:ring-red-500"
+                    )}
+                    disabled={isSubmitting}
+                  />
+                  {errors.password && (
+                    <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                      {errors.password.message}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword" className="text-sm font-medium">
+                    Confirm
+                  </Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder="Confirm password"
+                    autoComplete="new-password"
+                    {...register("confirmPassword")}
+                    className={cn(
+                      "h-10 sm:h-11 text-base",
+                      errors.confirmPassword && "border-red-500 focus-visible:ring-red-500"
+                    )}
+                    disabled={isSubmitting}
+                  />
+                  {errors.confirmPassword && (
+                    <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                      {errors.confirmPassword.message}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
-            <div className="mt-4 text-center text-sm">
-              Already have an account?{" "}
-              <Link href="/login" className="underline underline-offset-4">
-                Login
-              </Link>
+            <Button
+              type="submit"
+              className="w-full h-10 sm:h-11 text-base font-medium mt-6"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                  Creating account...
+                </>
+              ) : (
+                "Create account"
+              )}
+            </Button>
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground">
+                Already have an account?{" "}
+                <Link 
+                  href="/login" 
+                  className="font-medium text-primary hover:text-primary/80 underline underline-offset-4 transition-colors"
+                >
+                  Sign in
+                </Link>
+              </p>
             </div>
           </form>
         </CardContent>

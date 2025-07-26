@@ -120,3 +120,58 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  .line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+  
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+  
+  .line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+  
+  /* Touch-friendly minimum tap targets for mobile */
+  .tap-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Responsive text scaling */
+  @screen xs {
+    .responsive-text {
+      font-size: clamp(0.875rem, 2.5vw, 1rem);
+    }
+  }
+  
+  /* Custom breakpoint for extra small screens */
+  @media (min-width: 375px) {
+    .xs\:block {
+      display: block;
+    }
+    
+    .xs\:hidden {
+      display: none;
+    }
+    
+    .xs\:inline {
+      display: inline;
+    }
+    
+    .xs\:flex {
+      display: flex;
+    }
+  }
+}

@@ -52,69 +52,93 @@ export const LoginForm = ({
 
   return (
     <div
-      className={cn("flex flex-col gap-6 max-w-md sm:w-full", className)}
+      className={cn("flex flex-col gap-4 sm:gap-6 w-full max-w-sm sm:max-w-md mx-auto px-4 sm:px-0", className)}
       {...props}
     >
-      <Card>
-        <CardHeader>
-          <CardTitle>Login to your account</CardTitle>
-          <CardDescription>
-            Enter your email below to login to your account
+      <Card className="border-0 sm:border shadow-none sm:shadow-sm">
+        <CardHeader className="text-center px-4 sm:px-6 pt-6 sm:pt-6 pb-4">
+          <CardTitle className="text-xl sm:text-2xl font-bold">Welcome back</CardTitle>
+          <CardDescription className="text-sm sm:text-base text-muted-foreground">
+            Sign in to your account to continue
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <div className="flex flex-col gap-6">
-              {error && <p className="text-red-500 text-sm">{error}</p>}
-              <div className="grid gap-3">
-                <Label htmlFor="email">Email</Label>
+        <CardContent className="px-4 sm:px-6 pb-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 sm:space-y-6">
+            {error && (
+              <div className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400 rounded-lg border border-red-200 dark:border-red-800">
+                {error}
+              </div>
+            )}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-medium">
+                  Email address
+                </Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="m@example.com"
+                  placeholder="Enter your email"
+                  autoComplete="email"
                   {...register("email")}
-                  className={errors.email ? "border-red-500" : ""}
+                  className={cn(
+                    "h-10 sm:h-11 text-base",
+                    errors.email && "border-red-500 focus-visible:ring-red-500"
+                  )}
                   disabled={isSubmitting}
                 />
                 {errors.email && (
-                  <p className="text-red-500 text-xs mt-1">
+                  <p className="text-xs text-red-600 dark:text-red-400 mt-1">
                     {errors.email.message}
                   </p>
                 )}
               </div>
-              <div className="grid gap-3">
-                <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-sm font-medium">
+                  Password
+                </Label>
                 <Input
                   id="password"
                   type="password"
                   placeholder="Enter your password"
+                  autoComplete="current-password"
                   {...register("password")}
-                  className={errors.password ? "border-red-500" : ""}
+                  className={cn(
+                    "h-10 sm:h-11 text-base",
+                    errors.password && "border-red-500 focus-visible:ring-red-500"
+                  )}
                   disabled={isSubmitting}
                 />
                 {errors.password && (
-                  <p className="text-red-500 text-xs mt-1">
+                  <p className="text-xs text-red-600 dark:text-red-400 mt-1">
                     {errors.password.message}
                   </p>
                 )}
               </div>
-              <div className="flex flex-col gap-3">
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? "Logging in..." : "Login"}
-                </Button>
-              </div>
             </div>
-            <div className="mt-4 text-center text-sm">
-              Don&apos;t have an account?{" "}
-              <Link href="/signup" className="underline underline-offset-4">
-                Sign up
-              </Link>
+            <Button
+              type="submit"
+              className="w-full h-10 sm:h-11 text-base font-medium"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                  Signing in...
+                </>
+              ) : (
+                "Sign in"
+              )}
+            </Button>
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground">
+                New to EventX?{" "}
+                <Link 
+                  href="/signup" 
+                  className="font-medium text-primary hover:text-primary/80 underline underline-offset-4 transition-colors"
+                >
+                  Create an account
+                </Link>
+              </p>
             </div>
           </form>
         </CardContent>

@@ -5,17 +5,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useEvents } from "@/lib/events/event-context";
 import { filterEvents, sortEvents } from "@/lib/events/event-utils";
 import type { Event } from "@/lib/events/types";
-import { cn } from "@/lib/utils";
 import { Plus, CalendarIcon } from "lucide-react";
 import { useState } from "react";
 import EventForm from "./event-form";
 import EventFilters from "./event-filters";
 import EventCard from "./event-card";
-import EventListItem from "./event-list-item";
 
 export default function EventsListing() {
   const { events, filters, setFilters } = useEvents();
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [sortBy, setSortBy] = useState<"startDate" | "title">("startDate");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
@@ -69,20 +66,24 @@ export default function EventsListing() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold">Events</h1>
-            <p className="text-muted-foreground mt-1">
+            <h1 className="text-2xl sm:text-3xl font-bold">Events</h1>
+            <p className="text-muted-foreground mt-1 text-sm sm:text-base">
               Manage and organize your events
             </p>
           </div>
           <EventForm
             triggerComponent={
-              <Button size="lg" className="bg-primary hover:bg-primary/90">
+              <Button
+                size="default"
+                className="bg-primary hover:bg-primary/90 w-full sm:w-auto"
+              >
                 <Plus className="w-4 h-4 mr-2" />
-                Create Event
+                <span className="hidden xs:inline">Create Event</span>
+                <span className="xs:hidden">Create</span>
               </Button>
             }
           />
@@ -95,7 +96,6 @@ export default function EventsListing() {
           onClose={handleCloseEditDialog}
         />
 
-        {/* Filters */}
         <EventFilters
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
@@ -105,8 +105,6 @@ export default function EventsListing() {
           setSelectedCategory={setSelectedCategory}
           applyFilters={applyFilters}
           resetFilters={resetFilters}
-          viewMode={viewMode}
-          setViewMode={setViewMode}
           sortBy={sortBy}
           setSortBy={setSortBy}
           sortOrder={sortOrder}
@@ -115,51 +113,46 @@ export default function EventsListing() {
 
         {/* Events List */}
         {sortedEvents.length > 0 ? (
-          <div
-            className={cn(
-              viewMode === "grid"
-                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-                : "space-y-4"
-            )}
-          >
-            {sortedEvents.map((event) =>
-              viewMode === "grid" ? (
-                <EventCard
-                  key={event.uuid}
-                  event={event}
-                  onEdit={handleEditEvent}
-                />
-              ) : (
-                <EventListItem
-                  key={event.uuid}
-                  event={event}
-                  onEdit={handleEditEvent}
-                />
-              )
-            )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-6">
+            {sortedEvents.map((event) => (
+              <EventCard
+                key={event.uuid}
+                event={event}
+                onEdit={handleEditEvent}
+              />
+            ))}
           </div>
         ) : (
-          <Card className="text-center py-12">
-            <CardContent>
-              <div className="w-24 h-24 mx-auto mb-4 bg-muted rounded-full flex items-center justify-center">
-                <CalendarIcon className="w-12 h-12 text-muted-foreground" />
+          <Card className="text-center py-8 sm:py-12">
+            <CardContent className="px-4">
+              <div className="w-16 h-16 sm:w-24 sm:h-24 mx-auto mb-4 bg-muted rounded-full flex items-center justify-center">
+                <CalendarIcon className="w-8 h-8 sm:w-12 sm:h-12 text-muted-foreground" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">No events found</h3>
-              <p className="text-muted-foreground mb-6">
+              <h3 className="text-lg sm:text-xl font-semibold mb-2">
+                No events found
+              </h3>
+              <p className="text-muted-foreground mb-6 text-sm sm:text-base max-w-md mx-auto">
                 {filters.search || filters.eventType || filters.category
                   ? "Try adjusting your filters to see more events."
                   : "Get started by creating your first event."}
               </p>
               {filters.search || filters.eventType || filters.category ? (
-                <Button onClick={resetFilters} variant="outline">
+                <Button
+                  onClick={resetFilters}
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                >
                   Clear Filters
                 </Button>
               ) : (
                 <EventForm
                   triggerComponent={
-                    <Button>
+                    <Button className="w-full sm:w-auto">
                       <Plus className="w-4 h-4 mr-2" />
-                      Create Your First Event
+                      <span className="hidden sm:inline">
+                        Create Your First Event
+                      </span>
+                      <span className="sm:hidden">Create Event</span>
                     </Button>
                   }
                 />
