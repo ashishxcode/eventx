@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             credentials: "include",
           });
           setIsAuthenticated(false);
-          router.replace("/auth/login");
+          router.replace("/login");
         }
       } catch (err) {
         console.error("Error checking session:", err);
@@ -112,7 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         credentials: "include",
       });
       setIsAuthenticated(false);
-      router.push("/auth/login");
+      router.push("/login");
     } catch (err) {
       console.error("Logout error:", err);
     }

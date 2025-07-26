@@ -7,7 +7,7 @@ export default async function DashboardPage() {
   const session = cookieStore.get("session")?.value;
 
   if (!session) {
-    redirect("/auth/login");
+    redirect("/login");
   }
 
   return <EventsListing />;
