@@ -24,7 +24,24 @@ export const eventSchema = z
       .refine((val) => /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(val), {
         message: "Invalid end time",
       }),
-    eventLink: z.url().optional(),
+    // Fix: Handle empty strings and only validate URL format when there's content
+    eventLink: z
+      .string()
+      .optional()
+      .refine(
+        (val) => {
+          if (!val || val.trim() === "") return true; // Allow empty
+          try {
+            new URL(val);
+            return true;
+          } catch {
+            return false;
+          }
+        },
+        {
+          message: "Please enter a valid URL (e.g., https://example.com)",
+        }
+      ),
     location: z.string().optional(),
   })
   .refine(
