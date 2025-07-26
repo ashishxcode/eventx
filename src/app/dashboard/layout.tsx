@@ -7,7 +7,7 @@ import { EventProvider } from "@/lib/events/event-context";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
       <EventProvider>
         <div className="min-h-screen bg-background">
           <DashboardNavbar />
