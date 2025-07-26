@@ -1,4 +1,4 @@
-import Events from "@/components/events/events";
+import EventsListing from "@/components/events/events-listing";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -10,9 +10,5 @@ export default async function DashboardPage() {
     redirect("/auth/login");
   }
 
-  return (
-    <>
-      <Events />
-    </>
-  );
+  return <EventsListing />;
 }
