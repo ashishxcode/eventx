@@ -20,12 +20,15 @@ import Link from "next/link";
 import { SignupSchema } from "@/schemas/auth";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { SignupInputs } from "@/lib/auth/types";
+import { Eye, EyeOff, CheckCircle, Circle } from "lucide-react";
 
 export const SignupForm = ({
   className,
   ...props
 }: React.ComponentProps<"div">) => {
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { login } = useAuth();
   const router = useRouter();
   const [users, setUsers] = useLocalStorage<
@@ -36,20 +39,21 @@ export const SignupForm = ({
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
+    watch,
   } = useForm<SignupInputs>({
     resolver: zodResolver(SignupSchema),
   });
 
+  const password = watch("password", "");
+
   const onSubmit = async (data: SignupInputs) => {
     setError(null);
     try {
-      // Check if email already exists
       if (users.some((user) => user.email === data.email)) {
         setError("Email already exists");
         return;
       }
 
-      // Add new user to users array
       const newUser = {
         email: data.email,
         password: data.password,
@@ -57,10 +61,8 @@ export const SignupForm = ({
       };
       setUsers([...users, newUser]);
 
-      // Wait for login to complete
       await login(newUser);
 
-      // Verify user is set in LocalStorage
       const storedUser = JSON.parse(localStorage.getItem("user") || "null");
       if (!storedUser || storedUser.email !== data.email) {
         setError("Failed to set user session. Please try again.");
@@ -74,14 +76,43 @@ export const SignupForm = ({
     }
   };
 
+  // Password requirements validation
+  const passwordRequirements = [
+    {
+      label: "At least 8 characters",
+      met: password.length >= 8,
+    },
+    {
+      label: "Contains uppercase letter",
+      met: /[A-Z]/.test(password),
+    },
+    {
+      label: "Contains lowercase letter",
+      met: /[a-z]/.test(password),
+    },
+    {
+      label: "Contains number",
+      met: /\d/.test(password),
+    },
+    {
+      label: "Contains special character",
+      met: /[@$!%*?&]/.test(password),
+    },
+  ];
+
   return (
     <div
-      className={cn("flex flex-col gap-4 sm:gap-6 w-full max-w-sm sm:max-w-md mx-auto px-4 sm:px-0", className)}
+      className={cn(
+        "flex flex-col gap-4 sm:gap-6 w-full max-w-sm sm:max-w-md mx-auto px-4 sm:px-0",
+        className
+      )}
       {...props}
     >
       <Card className="border-0 sm:border shadow-none sm:shadow-sm">
         <CardHeader className="text-center px-4 sm:px-6 pt-6 sm:pt-6 pb-4">
-          <CardTitle className="text-xl sm:text-2xl font-bold">Create your account</CardTitle>
+          <CardTitle className="text-xl sm:text-2xl font-bold">
+            Create your account
+          </CardTitle>
           <CardDescription className="text-sm sm:text-base text-muted-foreground">
             Join EventX to start organizing amazing events
           </CardDescription>
@@ -138,51 +169,113 @@ export const SignupForm = ({
                   </p>
                 )}
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-sm font-medium">
-                    Password
-                  </Label>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-sm font-medium">
+                  Password
+                </Label>
+                <div className="relative">
                   <Input
                     id="password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder="Create password"
                     autoComplete="new-password"
                     {...register("password")}
                     className={cn(
-                      "h-10 sm:h-11 text-base",
-                      errors.password && "border-red-500 focus-visible:ring-red-500"
+                      "h-10 sm:h-11 text-base pr-10",
+                      errors.password &&
+                        "border-red-500 focus-visible:ring-red-500"
                     )}
                     disabled={isSubmitting}
                   />
-                  {errors.password && (
-                    <p className="text-xs text-red-600 dark:text-red-400 mt-1">
-                      {errors.password.message}
-                    </p>
-                  )}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 p-1 h-8 w-8"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </Button>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword" className="text-sm font-medium">
-                    Confirm
-                  </Label>
+                {errors.password && (
+                  <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                    {errors.password.message}
+                  </p>
+                )}
+                {password && (
+                  <div className="mt-2 space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Password must include:
+                    </p>
+                    <ul className="text-xs text-muted-foreground space-y-1">
+                      {passwordRequirements.map((req, index) => (
+                        <li key={index} className="flex items-center gap-2">
+                          <div className="flex items-center justify-center w-4 h-4">
+                            {req.met ? (
+                              <CheckCircle className="w-3 h-3 text-green-600 dark:text-green-400" />
+                            ) : (
+                              <Circle className="w-3 h-3 text-muted-foreground" />
+                            )}
+                          </div>
+                          <span
+                            className={cn(
+                              req.met
+                                ? "text-green-600 dark:text-green-400"
+                                : "text-muted-foreground"
+                            )}
+                          >
+                            {req.label}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label
+                  htmlFor="confirmPassword"
+                  className="text-sm font-medium"
+                >
+                  Confirm
+                </Label>
+                <div className="relative">
                   <Input
                     id="confirmPassword"
-                    type="password"
+                    type={showConfirmPassword ? "text" : "password"}
                     placeholder="Confirm password"
                     autoComplete="new-password"
                     {...register("confirmPassword")}
                     className={cn(
-                      "h-10 sm:h-11 text-base",
-                      errors.confirmPassword && "border-red-500 focus-visible:ring-red-500"
+                      "h-10 sm:h-11 text-base pr-10",
+                      errors.confirmPassword &&
+                        "border-red-500 focus-visible:ring-red-500"
                     )}
                     disabled={isSubmitting}
                   />
-                  {errors.confirmPassword && (
-                    <p className="text-xs text-red-600 dark:text-red-400 mt-1">
-                      {errors.confirmPassword.message}
-                    </p>
-                  )}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 p-1 h-8 w-8"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </Button>
                 </div>
+                {errors.confirmPassword && (
+                  <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                    {errors.confirmPassword.message}
+                  </p>
+                )}
               </div>
             </div>
             <Button
@@ -202,8 +295,8 @@ export const SignupForm = ({
             <div className="text-center">
               <p className="text-sm text-muted-foreground">
                 Already have an account?{" "}
-                <Link 
-                  href="/login" 
+                <Link
+                  href="/login"
                   className="font-medium text-primary hover:text-primary/80 underline underline-offset-4 transition-colors"
                 >
                   Sign in
