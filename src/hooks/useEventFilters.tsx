@@ -92,13 +92,27 @@ function buildURLParams(filters: {
 }): URLSearchParams {
   const params = new URLSearchParams();
 
-  if (filters.search.trim()) params.set("search", filters.search.trim());
-  if (filters.eventType !== "all") params.set("type", filters.eventType);
-  if (filters.category !== "all") params.set("category", filters.category);
-  if (filters.sortBy !== "startDate") params.set("sortBy", filters.sortBy);
-  if (filters.sortOrder !== "asc") params.set("sortOrder", filters.sortOrder);
-  if (filters.dateRange.start) params.set("dateStart", filters.dateRange.start);
-  if (filters.dateRange.end) params.set("dateEnd", filters.dateRange.end);
+  if (filters.search.trim()) {
+    params.set("search", filters.search.trim());
+  }
+  if (filters.eventType) {
+    params.set("type", filters.eventType);
+  }
+  if (filters.category) {
+    params.set("category", filters.category);
+  }
+  if (filters.sortBy) {
+    params.set("sortBy", filters.sortBy);
+  }
+  if (filters.sortOrder) {
+    params.set("sortOrder", filters.sortOrder);
+  }
+  if (filters.dateRange.start) {
+    params.set("dateStart", filters.dateRange.start);
+  }
+  if (filters.dateRange.end) {
+    params.set("dateEnd", filters.dateRange.end);
+  }
 
   return params;
 }
@@ -226,22 +240,34 @@ export function useEventFilters(): UseEventFiltersReturn {
 
   // Clear all filters
   const clearAllFilters = useCallback(() => {
-    setSearchTerm("");
-    setSelectedType("all");
-    setSelectedCategory("all");
-    setDateRange({ start: null, end: null });
-    setSortBy("startDate");
-    setSortOrder("asc");
-
-    setFilters({
+    const clearedState = {
       search: "",
-      eventType: "",
-      category: "",
+      eventType: "all",
+      category: "all",
       dateRange: { start: null, end: null },
+      sortBy: "startDate" as const,
+      sortOrder: "asc" as const,
+    };
+
+    // Update local state
+    setSearchTerm(clearedState.search);
+    setSelectedType(clearedState.eventType);
+    setSelectedCategory(clearedState.category);
+    setDateRange(clearedState.dateRange);
+    setSortBy(clearedState.sortBy);
+    setSortOrder(clearedState.sortOrder);
+
+    // Update context filters
+    setFilters({
+      search: clearedState.search,
+      eventType: "", // Context uses empty string, not "all"
+      category: "", // Context uses empty string, not "all"
+      dateRange: clearedState.dateRange,
     });
 
-    router.replace("", { scroll: false });
-  }, [setFilters, router]);
+    // Update URL using the proper updateURL function
+    updateURL(clearedState);
+  }, [setFilters, updateURL]);
 
   // Set sort configuration and update URL immediately
   const setSortConfig = useCallback(
@@ -261,25 +287,24 @@ export function useEventFilters(): UseEventFiltersReturn {
     [searchTerm, selectedType, selectedCategory, dateRange, updateURL]
   );
 
-  // Initialize filters from URL on mount
+  // Initialize filters from URL on mount and sync when URL changes
   useEffect(() => {
-    if (
-      urlFilters.search ||
-      urlFilters.eventType !== "all" ||
-      urlFilters.category !== "all" ||
-      urlFilters.dateRange.start ||
-      urlFilters.dateRange.end
-    ) {
-      setFilters({
-        search: urlFilters.search,
-        eventType: urlFilters.eventType === "all" ? "" : urlFilters.eventType,
-        category: urlFilters.category === "all" ? "" : urlFilters.category,
-        dateRange: urlFilters.dateRange,
-      });
-    }
+    // Update local state to match URL
+    setSearchTerm(urlFilters.search);
+    setSelectedType(urlFilters.eventType);
+    setSelectedCategory(urlFilters.category);
+    setDateRange(urlFilters.dateRange);
+    setSortBy(urlFilters.sortBy);
+    setSortOrder(urlFilters.sortOrder);
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run on mount
+    // Update context filters
+    setFilters({
+      search: urlFilters.search,
+      eventType: urlFilters.eventType === "all" ? "" : urlFilters.eventType,
+      category: urlFilters.category === "all" ? "" : urlFilters.category,
+      dateRange: urlFilters.dateRange,
+    });
+  }, [urlFilters, setFilters]);
 
   // Computed values
   const filteredAndSortedEvents = useMemo(() => {
@@ -295,13 +320,13 @@ export function useEventFilters(): UseEventFiltersReturn {
 
   const hasActiveFilters = useMemo(() => {
     return !!(
-      filters.search ||
-      filters.eventType ||
-      filters.category ||
-      filters.dateRange.start ||
-      filters.dateRange.end
+      searchTerm.trim() ||
+      selectedType !== "all" ||
+      selectedCategory !== "all" ||
+      dateRange.start ||
+      dateRange.end
     );
-  }, [filters]);
+  }, [searchTerm, selectedType, selectedCategory, dateRange]);
 
   const eventCount = useMemo(
     () => ({

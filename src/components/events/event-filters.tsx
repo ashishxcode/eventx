@@ -10,8 +10,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Search, Filter, ArrowUpDown, X, Tag, Grid3X3 } from "lucide-react";
 import { useState } from "react";
+import { format, parseISO } from "date-fns";
 import { EVENT_TYPES, EVENT_CATEGORIES } from "@/lib/events/event-constants";
 import { useEventFilters } from "@/hooks/useEventFilters";
 import { cn } from "@/lib/utils";
@@ -23,10 +25,22 @@ interface EventFiltersProps {
 export default function EventFilters({ className }: EventFiltersProps) {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
+  const formatDateForBadge = (dateString: string): string => {
+    try {
+      // Parse the YYYY-MM-DD format and format it nicely
+      const date = parseISO(dateString);
+      return format(date, "MMM d, yyyy");
+    } catch {
+      // Fallback to original string if parsing fails
+      return dateString;
+    }
+  };
+
   const {
     searchTerm,
     selectedType,
     selectedCategory,
+    dateRange,
     sortBy,
     sortOrder,
     hasActiveFilters,
@@ -46,6 +60,7 @@ export default function EventFilters({ className }: EventFiltersProps) {
     searchTerm.trim(),
     selectedType !== "all",
     selectedCategory !== "all",
+    dateRange.start || dateRange.end,
   ].filter(Boolean).length;
 
   return (
@@ -104,6 +119,13 @@ export default function EventFilters({ className }: EventFiltersProps) {
               ))}
             </SelectContent>
           </Select>
+
+          <DateRangePicker
+            key={`desktop-${dateRange.start}-${dateRange.end}`}
+            value={dateRange}
+            onChange={actions.setDateRange}
+            placeholder="Select date or range"
+          />
 
           <div className="w-px h-6 bg-border" />
 
@@ -165,6 +187,20 @@ export default function EventFilters({ className }: EventFiltersProps) {
       {/* Mobile Expanded Filters */}
       {showMobileFilters && (
         <div className="lg:hidden mt-4 p-4 border rounded-lg space-y-4">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm inline-block font-medium text-muted-foreground">
+                Date Range
+              </label>
+              <DateRangePicker
+                key={`mobile-${dateRange.start}-${dateRange.end}`}
+                value={dateRange}
+                onChange={actions.setDateRange}
+                placeholder="Select date or range"
+                className="w-full"
+              />
+            </div>
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm inline-block font-medium text-muted-foreground">
@@ -258,6 +294,15 @@ export default function EventFilters({ className }: EventFiltersProps) {
                     EVENT_CATEGORIES.find((c) => c.value === selectedCategory)
                       ?.label
                   }
+                </Badge>
+              )}
+              {(dateRange.start || dateRange.end) && (
+                <Badge variant="secondary" className="text-xs">
+                  {dateRange.start && dateRange.end
+                    ? `${formatDateForBadge(dateRange.start)} - ${formatDateForBadge(dateRange.end)}`
+                    : dateRange.start
+                    ? `From ${formatDateForBadge(dateRange.start)}`
+                    : `Until ${formatDateForBadge(dateRange.end!)}`}
                 </Badge>
               )}
             </div>

@@ -112,11 +112,43 @@ export function filterEvents(
     const matchesCategory = filters.category
       ? event.category === filters.category
       : true;
-    const matchesDateRange =
-      filters.dateRange.start && filters.dateRange.end
-        ? new Date(event.startDate) >= new Date(filters.dateRange.start) &&
-          new Date(event.endDate) <= new Date(filters.dateRange.end)
-        : true;
+    const matchesDateRange = (() => {
+      if (!filters.dateRange.start && !filters.dateRange.end) return true;
+      
+      const eventStart = new Date(event.startDate);
+      const eventEnd = new Date(event.endDate);
+      
+      // Convert dates to day-level for comparison (ignore time)
+      const eventStartDay = new Date(eventStart.getFullYear(), eventStart.getMonth(), eventStart.getDate());
+      const eventEndDay = new Date(eventEnd.getFullYear(), eventEnd.getMonth(), eventEnd.getDate());
+      
+      const parseFilterDate = (dateString: string): Date => {
+        // Parse date as local date to avoid timezone issues
+        const [year, month, day] = dateString.split('-').map(Number);
+        return new Date(year, month - 1, day);
+      };
+
+      if (filters.dateRange.start && filters.dateRange.end) {
+        // Date range filtering: event overlaps with the selected range
+        const filterStartDay = parseFilterDate(filters.dateRange.start);
+        const filterEndDay = parseFilterDate(filters.dateRange.end);
+        return eventStartDay <= filterEndDay && eventEndDay >= filterStartDay;
+      }
+      
+      if (filters.dateRange.start && !filters.dateRange.end) {
+        // Single date filtering: event happens on or overlaps with the selected date
+        const filterDay = parseFilterDate(filters.dateRange.start);
+        return eventStartDay <= filterDay && eventEndDay >= filterDay;
+      }
+      
+      if (filters.dateRange.end && !filters.dateRange.start) {
+        // End date only: events that end on or before this date
+        const filterEndDay = parseFilterDate(filters.dateRange.end);
+        return eventEndDay <= filterEndDay;
+      }
+      
+      return true;
+    })();
     return matchesSearch && matchesType && matchesCategory && matchesDateRange;
   });
 }
