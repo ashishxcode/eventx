@@ -1,29 +1,29 @@
 "use client";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { EVENT_STATUS_MAP, EVENT_TYPE_MAP } from "@/lib/events/event-constants";
 import { useEvents } from "@/lib/events/event-context";
 import type { Event } from "@/lib/events/types";
+import { cn } from "@/lib/utils";
 import { format, isAfter, isBefore } from "date-fns";
 import {
-  Calendar,
-  Clock,
-  ExternalLink,
-  User,
   ArrowLeft,
-  Share2,
-  Copy,
-  CheckCircle,
   Building,
-  Timer,
+  Calendar,
   CalendarDays,
+  CheckCircle,
+  Clock,
+  Copy,
+  ExternalLink,
   Link as LinkIcon,
+  Share2,
+  Timer,
+  User,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useState } from "react";
-import { EVENT_TYPE_MAP, EVENT_STATUS_MAP } from "@/lib/events/event-constants";
 
 interface EventDetailPageProps {
   eventId: string;
@@ -378,21 +378,9 @@ export default function EventDetails({ eventId }: EventDetailPageProps) {
                   Event ID
                 </div>
                 <div className="flex items-center gap-2">
-                  <code className="text-xs bg-muted px-2 py-1 rounded font-mono flex-1 break-all">
+                  <code className="text-xs bg-muted px-2 py-1 rounded-sm font-mono flex-1 break-all">
                     {event.uuid}
                   </code>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      navigator.clipboard.writeText(event.uuid);
-                      setCopied(true);
-                      setTimeout(() => setCopied(false), 1000);
-                    }}
-                    className="p-1 h-7 w-7"
-                  >
-                    <Copy className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-                  </Button>
                 </div>
               </div>
             </CardContent>
