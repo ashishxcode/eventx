@@ -35,19 +35,15 @@ export const prepareInitialValues = (event: Event | null): EventFormData => {
     };
   }
 
-  // Default values for new event
-  const now = new Date();
-  const twoHoursLater = new Date(now.getTime() + 2 * 60 * 60 * 1000);
-
   return {
     title: "",
     description: "",
     eventType: "In-Person",
     category: "",
-    startDate: now.toISOString().split("T")[0],
-    startTime: now.toTimeString().slice(0, 5),
-    endDate: twoHoursLater.toISOString().split("T")[0],
-    endTime: twoHoursLater.toTimeString().slice(0, 5),
+    startDate: "",
+    startTime: "",
+    endDate: "",
+    endTime: "",
     location: "",
     eventLink: "",
   };
@@ -56,7 +52,7 @@ export const prepareInitialValues = (event: Event | null): EventFormData => {
 export const createEventData = (
   data: EventFormData,
   initialEvent: Event | null,
-  user: { name?: string; email?: string } | null
+  user: { name?: string; email?: string } | null,
 ): Event => {
   return {
     uuid: initialEvent?.uuid || crypto.randomUUID(),
@@ -100,7 +96,7 @@ export function filterEvents(
     eventType: string;
     category: string;
     dateRange: { start: string | null; end: string | null };
-  }
+  },
 ): Event[] {
   return events.filter((event) => {
     const matchesSearch =
@@ -114,17 +110,25 @@ export function filterEvents(
       : true;
     const matchesDateRange = (() => {
       if (!filters.dateRange.start && !filters.dateRange.end) return true;
-      
+
       const eventStart = new Date(event.startDate);
       const eventEnd = new Date(event.endDate);
-      
+
       // Convert dates to day-level for comparison (ignore time)
-      const eventStartDay = new Date(eventStart.getFullYear(), eventStart.getMonth(), eventStart.getDate());
-      const eventEndDay = new Date(eventEnd.getFullYear(), eventEnd.getMonth(), eventEnd.getDate());
-      
+      const eventStartDay = new Date(
+        eventStart.getFullYear(),
+        eventStart.getMonth(),
+        eventStart.getDate(),
+      );
+      const eventEndDay = new Date(
+        eventEnd.getFullYear(),
+        eventEnd.getMonth(),
+        eventEnd.getDate(),
+      );
+
       const parseFilterDate = (dateString: string): Date => {
         // Parse date as local date to avoid timezone issues
-        const [year, month, day] = dateString.split('-').map(Number);
+        const [year, month, day] = dateString.split("-").map(Number);
         return new Date(year, month - 1, day);
       };
 
@@ -134,19 +138,19 @@ export function filterEvents(
         const filterEndDay = parseFilterDate(filters.dateRange.end);
         return eventStartDay <= filterEndDay && eventEndDay >= filterStartDay;
       }
-      
+
       if (filters.dateRange.start && !filters.dateRange.end) {
         // Single date filtering: event happens on or overlaps with the selected date
         const filterDay = parseFilterDate(filters.dateRange.start);
         return eventStartDay <= filterDay && eventEndDay >= filterDay;
       }
-      
+
       if (filters.dateRange.end && !filters.dateRange.start) {
         // End date only: events that end on or before this date
         const filterEndDay = parseFilterDate(filters.dateRange.end);
         return eventEndDay <= filterEndDay;
       }
-      
+
       return true;
     })();
     return matchesSearch && matchesType && matchesCategory && matchesDateRange;
@@ -155,7 +159,7 @@ export function filterEvents(
 
 export function sortEvents(
   events: Event[],
-  sortBy: "startDate" | "title"
+  sortBy: "startDate" | "title",
 ): Event[] {
   return [...events].sort((a, b) => {
     if (sortBy === "startDate") {
@@ -184,7 +188,7 @@ export const calculateDuration = (
   startDate: string,
   startTime: string,
   endDate: string,
-  endTime: string
+  endTime: string,
 ): string => {
   try {
     const start = new Date(`${startDate}T${startTime}`);
