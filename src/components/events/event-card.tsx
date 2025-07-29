@@ -1,5 +1,17 @@
 "use client";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,42 +21,26 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { format, isAfter, isBefore } from "date-fns";
-import {
-  CalendarIcon,
-  MapPin,
-  ExternalLink,
-  Edit,
-  Trash2,
-  MoreVertical,
-} from "lucide-react";
-import type { Event } from "@/lib/events/types";
-import { useRouter } from "next/navigation";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-  AlertDialogFooter,
-} from "@/components/ui/alert-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { EVENT_STATUS_MAP, EVENT_TYPE_MAP } from "@/lib/events/event-constants";
 import { useEvents } from "@/lib/events/event-context";
+import type { Event } from "@/lib/events/types";
+import { cn } from "@/lib/utils";
+import { format, isAfter, isBefore } from "date-fns";
 import {
-  EVENT_TYPE_MAP,
-  EVENT_CATEGORY_MAP,
-  EVENT_STATUS_MAP,
-} from "@/lib/events/event-constants";
+  CalendarIcon,
+  Edit,
+  ExternalLink,
+  MapPin,
+  MoreVertical,
+  Trash2,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface EventCardProps {
   event: Event;
@@ -72,7 +68,10 @@ export default function EventCard({ event, onEdit }: EventCardProps) {
   const TypeIcon = typeConfig.icon;
 
   return (
-    <Card onClick={() => router.push(`/dashboard/events/${event.uuid}`)}>
+    <Card
+      onClick={() => router.push(`/dashboard/events/${event.uuid}`)}
+      className="cursor-pointer"
+    >
       <CardHeader className="flex items-start justify-between">
         <div>
           <CardTitle className="text-lg font-bold line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-tight mb-2">
