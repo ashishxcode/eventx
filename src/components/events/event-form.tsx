@@ -234,7 +234,7 @@ export default function EventForm({
 
             {/* Scrollable content */}
             <div
-              className="flex-1 overflow-y-auto px-4 sm:px-6"
+              className="flex-1 overflow-y-auto p-4 sm:p-6"
               ref={scrollContainerRef}
             >
               <div className="space-y-4">
